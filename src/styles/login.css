@@ -1,0 +1,53 @@
+.sign-up {
+    padding: 2rem;
+    max-width: 30rem;
+    margin: 147px auto;
+    background-color: rgb(254, 255, 255);
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px,
+        rgba(0, 0, 0, 0.3) 0px 18px 36px -18px;
+}
+.sign-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+h1 {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+}
+p {
+    margin-bottom: 1.5rem;
+    font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+input {
+    padding: 0.5rem;
+    border: 1px solid gray;
+    font-size: 1rem;
+    font-family: inherit;
+}
+.btn-in {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1.2rem;
+    margin-top: 20px;
+    background-color: blue;
+}
+.option {
+    border: none;
+    padding: 0.5rem;
+}
+.error {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+    color: red;
+}
