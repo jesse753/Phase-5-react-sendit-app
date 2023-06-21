@@ -1,0 +1,79 @@
+.hero-section-2 {
+    background-image: url("https://img.freepik.com/premium-vector/truck-delivery-service-food-package-online-shopping-delivery-service_1375-3052.jpg");
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+}
+h2 {
+    color: #ffffff;
+}
+
+.hero-content {
+    padding: 20px;
+    max-width: 600px;
+    margin-left: 80px;
+    border-radius: 20px;
+    background-color: gray;
+    color: #ffffff;
+}
+
+.hero-content h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+.hero-content p {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.cta-button {
+    padding: 10px 20px;
+    display: flex;
+    justify-content: center;
+    font-size: 16px;
+    margin: 20px auto;
+    background-color: #2201b6;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.cta-button-1 {
+    color: white;
+}
+
+.cta-button:hover {
+    background-color: #13125f;
+}
+/* 
+.animation-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 50%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    overflow: hidden;
+}
+
+.animation-item {
+    width: 200px;
+    height: 200px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    animation: rotate 10s infinite;
+} */
+
+/* @keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+} */
