@@ -12,3 +12,6 @@ const DeliveryDetails = ({ distance, duration }) => {
 
 export default DeliveryDetails;
 
+
+
+

@@ -1,57 +1,202 @@
-import React from 'react';
-import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
-import { usePlacesAutocomplete } from '@react-google-maps/api'; 
+import React, { useState, useEffect, useRef } from 'react';
+import { GoogleMap, Marker, Polyline, useLoadScript } from '@react-google-maps/api';
+import PlacesAutocomplete, {
+  geocodeByAddress,
+  getLatLng
+} from 'react-places-autocomplete';
+import DeliveryDetails from './DeliveryDetails';
 
-const Map = ({ apiKey, pickupLocation, destination, distance, duration, onPickupLoad, onDestinationLoad }) => {
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
+const Map = ({ apiKey, pickupLocation, destination, onPickupLoad, onDestinationLoad }) => {
+  const [pickupAddress, setPickupAddress] = useState('');
+  const [destinationAddress, setDestinationAddress] = useState('');
+  const [distance, setDistance] = useState('');
+  const [duration, setDuration] = useState('');
+  const [map, setMap] = useState(null);
+  const mapRef = useRef(null);
+
+  const handlePickupChange = (address) => {
+    setPickupAddress(address);
+  };
+
+  const handleDestinationChange = (address) => {
+    setDestinationAddress(address);
+  };
+
+  const handleCalculate = async () => {
+    try {
+      const pickupResults = await geocodeByAddress(pickupAddress);
+      const pickupLatLng = await getLatLng(pickupResults[0]);
+      const destinationResults = await geocodeByAddress(destinationAddress);
+      const destinationLatLng = await getLatLng(destinationResults[0]);
+
+      setPickupAddress(pickupLatLng);
+      setDestinationAddress(destinationLatLng);
+
+      // Use the Google Maps Distance Matrix API to calculate distance and duration
+      const service = new window.google.maps.DistanceMatrixService();
+      service.getDistanceMatrix(
+        {
+          origins: [pickupAddress],
+          destinations: [destinationAddress],
+          travelMode: 'DRIVING',
+        },
+        (response, status) => {
+          if (status === 'OK') {
+            const { distance, duration } = response.rows[0].elements[0];
+            setDistance(distance.text);
+            setDuration(duration.text);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: apiKey,
+    libraries: ['places'],
   });
 
-  const mapContainerStyle = {
-    width: '100%',
-    height: '400px',
+  useEffect(() => {
+    if (isLoaded) {
+      setPickupAddress('');
+      setDestinationAddress('');
+    }
+  }, [isLoaded]);
+
+  useEffect(() => {
+    if (map && pickupLocation && destination) {
+      const bounds = new window.google.maps.LatLngBounds();
+      bounds.extend(pickupLocation);
+      bounds.extend(destination);
+      map.fitBounds(bounds);
+    }
+  }, [map, pickupLocation, destination]);
+
+  const onMapLoad = (mapInstance) => {
+    mapRef.current = mapInstance;
+    setMap(mapInstance);
   };
 
-  const center = {
-    lat: (pickupLocation.lat + destination.lat) / 2,
-    lng: (pickupLocation.lng + destination.lng) / 2,
-  };
+  if (loadError) {
+    return <div>Error loading Google Maps</div>;
+  }
 
-  const polylinePath = [
-    { lat: pickupLocation.lat, lng: pickupLocation.lng },
-    { lat: destination.lat, lng: destination.lng },
-  ];
+  return (
+    <div>
+      <PlacesAutocomplete value={pickupAddress} onChange={handlePickupChange} onLoad={onPickupLoad}>
+        {({ getInputProps, suggestions, getSuggestionItemProps }) => (
+          <div>
+            <input {...getInputProps({ placeholder: 'Enter pickup location' })} />
+            <div>
+              {suggestions.map((suggestion, index) => (
+                <div key={index} {...getSuggestionItemProps(suggestion)}>
+                  {suggestion.description}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </PlacesAutocomplete>
 
-  const { suggestions: pickupSuggestions, setValue: setPickupValue } = usePlacesAutocomplete(); // Use usePlacesAutocomplete for pickup location
-  const { suggestions: destinationSuggestions, setValue: setDestinationValue } = usePlacesAutocomplete(); // Use usePlacesAutocomplete for destination
+      <PlacesAutocomplete value={destinationAddress} onChange={handleDestinationChange} onLoad={onDestinationLoad}>
+        {({ getInputProps, suggestions, getSuggestionItemProps }) => (
+          <div>
+            <input {...getInputProps({ placeholder: 'Enter destination' })} />
+            <div>
+              {suggestions.map((suggestion, index) => (
+                <div key={index} {...getSuggestionItemProps(suggestion)}>
+                  {suggestion.description}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </PlacesAutocomplete>
 
-  return isLoaded ? (
-    <GoogleMap
-      mapContainerStyle={mapContainerStyle}
-      zoom={8}
-      center={center}
-    >
-      <Marker position={pickupLocation} />
-      <Marker position={destination} />
-      <Polyline path={polylinePath} />
+      <button onClick={handleCalculate}>Calculate</button>
 
-      <input
-        value={pickupValue}
-        onChange={(e) => setPickupValue(e.target.value)}
-        placeholder="Enter pickup location"
-      />
+      {distance && duration && (
+        <div>
+                <DeliveryDetails distance={distance} duration={duration} />
+          
+        </div>
+      )}
 
-      <input
-        value={destinationValue}
-        onChange={(e) => setDestinationValue(e.target.value)}
-        placeholder="Enter destination"
-      />
-    </GoogleMap>
-  ) : null;
+      {isLoaded && (
+        <GoogleMap
+          mapContainerStyle={{ height: '400px', width: '100%' }}
+          center={pickupLocation}
+          zoom={10}
+          onLoad={onMapLoad}
+        >
+          {pickupLocation && <Marker position={pickupLocation} />}
+          {destination && <Marker position={destination} />}
+          {pickupLocation && destination && <Polyline path={[pickupLocation, destination]} />}
+        </GoogleMap>
+      )}
+
+
+    </div>
+  );
 };
 
 export default Map;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
