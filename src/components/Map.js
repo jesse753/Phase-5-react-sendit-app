@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { GoogleMap, Marker, Polyline, useLoadScript } from '@react-google-maps/api';
-import PlacesAutocomplete, {
-  geocodeByAddress,
-  getLatLng
-} from 'react-places-autocomplete';
-import DeliveryDetails from './DeliveryDetails';
+import React, { useState, useEffect } from 'react';
+import { GoogleMap, Marker, Polyline } from '@react-google-maps/api';
+import PlacesAutocomplete from 'react-places-autocomplete';
 
-const Map = ({ apiKey, pickupLocation, destination, onPickupLoad, onDestinationLoad }) => {
+const Map = ({
+  apiKey,
+  onPickupLoad,
+  onDestinationLoad
+}) => {
   const [pickupAddress, setPickupAddress] = useState('');
   const [destinationAddress, setDestinationAddress] = useState('');
+  const [pickupLocation, setPickupLocation] = useState(null);
+  const [destination, setDestination] = useState(null);
   const [distance, setDistance] = useState('');
   const [duration, setDuration] = useState('');
-  const [map, setMap] = useState(null);
-  const mapRef = useRef(null);
 
   const handlePickupChange = (address) => {
     setPickupAddress(address);
@@ -22,66 +22,56 @@ const Map = ({ apiKey, pickupLocation, destination, onPickupLoad, onDestinationL
     setDestinationAddress(address);
   };
 
-  const handleCalculate = async () => {
-    try {
-      const pickupResults = await geocodeByAddress(pickupAddress);
-      const pickupLatLng = await getLatLng(pickupResults[0]);
-      const destinationResults = await geocodeByAddress(destinationAddress);
-      const destinationLatLng = await getLatLng(destinationResults[0]);
-
-      setPickupAddress(pickupLatLng);
-      setDestinationAddress(destinationLatLng);
-
-      // Use the Google Maps Distance Matrix API to calculate distance and duration
-      const service = new window.google.maps.DistanceMatrixService();
-      service.getDistanceMatrix(
-        {
-          origins: [pickupAddress],
-          destinations: [destinationAddress],
-          travelMode: 'DRIVING',
-        },
-        (response, status) => {
-          if (status === 'OK') {
-            const { distance, duration } = response.rows[0].elements[0];
-            setDistance(distance.text);
-            setDuration(duration.text);
-          }
+  const handleCalculate = () => {
+    // Use the Google Maps Distance Matrix API to calculate distance and duration
+    const service = new window.google.maps.DistanceMatrixService();
+    service.getDistanceMatrix(
+      {
+        origins: [pickupAddress],
+        destinations: [destinationAddress],
+        travelMode: 'DRIVING',
+      },
+      (response, status) => {
+        if (status === 'OK') {
+          const { distance, duration } = response.rows[0].elements[0];
+          setDistance(distance.text);
+          setDuration(duration.text);
         }
+      }
+    );
+  };
+
+  useEffect(() => {
+    // Fetch pickup location and destination from API or user input
+    // You can replace this with your actual API or input logic
+    const fetchPickupLocation = async () => {
+      // Example: Fetch the coordinates for the pickup address using a geocoding API
+      const response = await fetch(
+        `https://geocoding-api.com?address=${encodeURIComponent(pickupAddress)}&apiKey=${apiKey}`
       );
-    } catch (error) {
-      console.error('Error:', error);
+      const data = await response.json();
+      const { lat, lng } = data.results[0].geometry.location;
+      setPickupLocation({ lat, lng });
+    };
+
+    const fetchDestination = async () => {
+      // Example: Fetch the coordinates for the destination address using a geocoding API
+      const response = await fetch(
+        `https://geocoding-api.com?address=${encodeURIComponent(destinationAddress)}&apiKey=${apiKey}`
+      );
+      const data = await response.json();
+      const { lat, lng } = data.results[0].geometry.location;
+      setDestination({ lat, lng });
+    };
+
+    // Fetch the pickup location and destination when their addresses change
+    if (pickupAddress !== '') {
+      fetchPickupLocation();
     }
-  };
-
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: apiKey,
-    libraries: ['places'],
-  });
-
-  useEffect(() => {
-    if (isLoaded) {
-      setPickupAddress('');
-      setDestinationAddress('');
+    if (destinationAddress !== '') {
+      fetchDestination();
     }
-  }, [isLoaded]);
-
-  useEffect(() => {
-    if (map && pickupLocation && destination) {
-      const bounds = new window.google.maps.LatLngBounds();
-      bounds.extend(pickupLocation);
-      bounds.extend(destination);
-      map.fitBounds(bounds);
-    }
-  }, [map, pickupLocation, destination]);
-
-  const onMapLoad = (mapInstance) => {
-    mapRef.current = mapInstance;
-    setMap(mapInstance);
-  };
-
-  if (loadError) {
-    return <div>Error loading Google Maps</div>;
-  }
+  }, [pickupAddress, destinationAddress, apiKey]);
 
   return (
     <div>
@@ -117,33 +107,32 @@ const Map = ({ apiKey, pickupLocation, destination, onPickupLoad, onDestinationL
 
       <button onClick={handleCalculate}>Calculate</button>
 
-      {distance && duration && (
-        <div>
-                <DeliveryDetails distance={distance} duration={duration} />
-          
-        </div>
-      )}
-
-      {isLoaded && (
+      {pickupLocation && destination && (
         <GoogleMap
-          mapContainerStyle={{ height: '400px', width: '100%' }}
           center={pickupLocation}
-          zoom={10}
-          onLoad={onMapLoad}
+          zoom={8}
+          mapContainerStyle={{ width: '100%', height: '400px' }}
         >
-          {pickupLocation && <Marker position={pickupLocation} />}
-          {destination && <Marker position={destination} />}
-          {pickupLocation && destination && <Polyline path={[pickupLocation, destination]} />}
+          <Marker position={pickupLocation} />
+          <Marker position={destination} />
+          <Polyline
+            path={[pickupLocation, destination]}
+            options={{ strokeColor: '#0000FF' }}
+          />
         </GoogleMap>
       )}
 
-
+      {distance && duration && (
+        <div>
+          <p>Distance: {distance}</p>
+          <p>Duration: {duration}</p>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Map;
-
 
 
 
