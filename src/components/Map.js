@@ -2,11 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GoogleMap, Marker, Polyline } from '@react-google-maps/api';
 import PlacesAutocomplete from 'react-places-autocomplete';
 
-const Map = ({
-  apiKey,
-  onPickupLoad,
-  onDestinationLoad
-}) => {
+const Map = ({ onPickupLoad, onDestinationLoad }) => {
   const [pickupAddress, setPickupAddress] = useState('');
   const [destinationAddress, setDestinationAddress] = useState('');
   const [pickupLocation, setPickupLocation] = useState(null);
@@ -42,40 +38,50 @@ const Map = ({
   };
 
   useEffect(() => {
-    // Fetch pickup location and destination from API or user input
-    // You can replace this with your actual API or input logic
     const fetchPickupLocation = async () => {
-      // Example: Fetch the coordinates for the pickup address using a geocoding API
       const response = await fetch(
-        `https://geocoding-api.com?address=${encodeURIComponent(pickupAddress)}&apiKey=${apiKey}`
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+          pickupAddress
+        )}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
       );
       const data = await response.json();
-      const { lat, lng } = data.results[0].geometry.location;
-      setPickupLocation({ lat, lng });
+      if (data.results && data.results.length > 0) {
+        const { lat, lng } = data.results[0].geometry.location;
+        setPickupLocation({ lat, lng });
+      }
     };
 
     const fetchDestination = async () => {
-      // Example: Fetch the coordinates for the destination address using a geocoding API
-      const response = await fetch(
-        `https://geocoding-api.com?address=${encodeURIComponent(destinationAddress)}&apiKey=${apiKey}`
-      );
-      const data = await response.json();
-      const { lat, lng } = data.results[0].geometry.location;
-      setDestination({ lat, lng });
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+            destinationAddress
+          )}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`
+        );
+        const data = await response.json();
+        console.log('Geocoding API response:', data);
+    
+        if (data.results && data.results.length > 0) {
+          const { lat, lng } = data.results[0].geometry.location;
+          setDestination({ lat, lng });
+        }
+      } catch (error) {
+        console.error('Error while fetching destination:', error);
+      }
     };
+    
 
-    // Fetch the pickup location and destination when their addresses change
     if (pickupAddress !== '') {
       fetchPickupLocation();
     }
     if (destinationAddress !== '') {
       fetchDestination();
     }
-  }, [pickupAddress, destinationAddress, apiKey]);
+  }, [pickupAddress, destinationAddress]);
 
   return (
     <div>
-      <PlacesAutocomplete value={pickupAddress} onChange={handlePickupChange} onLoad={onPickupLoad}>
+      <PlacesAutocomplete value={pickupAddress} onChange={(handlePickupChange)} onLoad={onPickupLoad}>
         {({ getInputProps, suggestions, getSuggestionItemProps }) => (
           <div>
             <input {...getInputProps({ placeholder: 'Enter pickup location' })} />
@@ -115,15 +121,17 @@ const Map = ({
         >
           <Marker position={pickupLocation} />
           <Marker position={destination} />
+          
           <Polyline
             path={[pickupLocation, destination]}
             options={{ strokeColor: '#0000FF' }}
-          />
-        </GoogleMap>
+          />          
+      </GoogleMap>
       )}
 
       {distance && duration && (
         <div>
+          <>DeliveryDetails</>
           <p>Distance: {distance}</p>
           <p>Duration: {duration}</p>
         </div>
@@ -133,6 +141,12 @@ const Map = ({
 };
 
 export default Map;
+
+
+
+
+
+
 
 
 
