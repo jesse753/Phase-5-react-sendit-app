@@ -55,7 +55,9 @@ const App = () => {
         onPickupLoad={onPickupLoad}
         onDestinationLoad={onDestinationLoad}
       />
-      <DeliveryDetails distance={distance} duration={duration} />
+{distance && duration && (
+        <DeliveryDetails distance={distance} duration={duration} />
+      )}
       
     </div>
   );
